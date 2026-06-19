@@ -1,0 +1,49 @@
+name: Build zkLink C# Bindings (Linux)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build zklink_sdk for Linux (python feature enables UDL scaffolding)
+        working-directory: zklink_sdk
+        run: |
+          cargo build --release -p bindings_sdk --features python
+
+      - name: Install uniffi-bindgen-cs (version matching uniffi 0.23.0)
+        run: |
+          cargo install uniffi-bindgen-cs \
+            --git https://github.com/NordSecurity/uniffi-bindgen-cs \
+            --tag v0.4.1+v0.23.0
+
+      - name: Generate C# bindings
+        working-directory: zklink_sdk
+        run: |
+          uniffi-bindgen-cs bindings/sdk/src/ffi.udl \
+            --out-dir generated-cs
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p dist
+          cp zklink_sdk/target/release/libzklink_sdk.so dist/
+          cp zklink_sdk/generated-cs/*.cs dist/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zklink-sdk-linux-csharp
+          path: dist/
+          retention-days: 90

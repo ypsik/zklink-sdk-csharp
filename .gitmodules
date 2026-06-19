@@ -1,0 +1,3 @@
+[submodule "zklink_sdk"]
+	path = zklink_sdk
+	url = https://github.com/zkLinkProtocol/zklink_sdk.git
