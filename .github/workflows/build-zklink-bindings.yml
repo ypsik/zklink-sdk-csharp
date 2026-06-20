@@ -35,19 +35,19 @@ jobs:
         run: |
           cargo build --release -p bindings_sdk --features python
 
-      - name: Install uniffi-bindgen-cs (version matching uniffi 0.23.0)
+      - name: Install uniffi-bindgen-cs (version matching uniffi 0.23.0) - Windows
+        if: matrix.os == 'windows-latest'
         run: |
           cargo install uniffi-bindgen-cs `
             --git https://github.com/NordSecurity/uniffi-bindgen-cs `
             --tag v0.4.1+v0.23.0
-        if: matrix.os == 'windows-latest'
 
-      - name: Install uniffi-bindgen-cs (version matching uniffi 0.23.0)
+      - name: Install uniffi-bindgen-cs (version matching uniffi 0.23.0) - Linux
+        if: matrix.os != 'windows-latest'
         run: |
           cargo install uniffi-bindgen-cs \
             --git https://github.com/NordSecurity/uniffi-bindgen-cs \
             --tag v0.4.1+v0.23.0
-        if: matrix.os != 'windows-latest'
 
       - name: Generate C# bindings
         working-directory: zklink_sdk
@@ -58,14 +58,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p dist
-          cp zklink_sdk/target/release/libzklink_sdk.so dist/
+          cp zklink_sdk/target/release/libzklink_sdk.so dist/libuniffi.so
           cp zklink_sdk/generated-cs/*.cs dist/
 
       - name: Collect build artifacts (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           mkdir dist
-          copy zklink_sdk\target\release\zklink_sdk.dll dist\
+          copy zklink_sdk\target\release\zklink_sdk.dll dist\uniffi.dll
           copy zklink_sdk\generated-cs\*.cs dist\
 
       - name: Upload artifacts
@@ -73,4 +73,48 @@ jobs:
         with:
           name: ${{ matrix.artifact-name }}
           path: dist/
+          retention-days: 90
+
+  pack-nuget:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zklink-sdk-linux-csharp
+          path: pack/linux
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zklink-sdk-windows-csharp
+          path: pack/windows
+
+      - name: Assemble package layout
+        run: |
+          mkdir -p nuget/runtimes/linux-x64/native
+          mkdir -p nuget/runtimes/win-x64/native
+          cp pack/linux/libuniffi.so nuget/runtimes/linux-x64/native/libuniffi.so
+          cp pack/windows/uniffi.dll nuget/runtimes/win-x64/native/uniffi.dll
+          cp pack/linux/*.cs nuget/zklink_sdk.cs
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build NuGet package
+        working-directory: nuget
+        run: |
+          dotnet pack ZkLink.Cs.Sdk.csproj -c Release -o ../nupkg
+
+      - name: Upload NuGet package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zklink-sdk-nuget-package
+          path: nupkg/*.nupkg
           retention-days: 90
