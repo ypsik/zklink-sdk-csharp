@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="zklink_sdk.cs" />
+    <Compile Include="IsExternalInit.cs" />
   </ItemGroup>
 
   <ItemGroup>
