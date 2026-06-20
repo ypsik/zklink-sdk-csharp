@@ -59,14 +59,14 @@ jobs:
         run: |
           mkdir -p dist
           cp zklink_sdk/target/release/libzklink_sdk.so dist/libuniffi.so
-          cp zklink_sdk/generated-cs/*.cs dist/
+          cp zklink_sdk/generated-cs/zklink_sdk.cs dist/zklink_sdk.cs
 
       - name: Collect build artifacts (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           mkdir dist
           copy zklink_sdk\target\release\zklink_sdk.dll dist\uniffi.dll
-          copy zklink_sdk\generated-cs\*.cs dist\
+          copy zklink_sdk\generated-cs\zklink_sdk.cs dist\zklink_sdk.cs
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -94,13 +94,24 @@ jobs:
           name: zklink-sdk-windows-csharp
           path: pack/windows
 
+      - name: Debug - list and verify downloaded artifact contents
+        run: |
+          echo "--- pack/linux contents ---"
+          ls -la pack/linux/
+          echo "--- pack/windows contents ---"
+          ls -la pack/windows/
+          echo "--- linux zklink_sdk.cs line count ---"
+          wc -l pack/linux/zklink_sdk.cs
+          echo "--- last 10 lines of linux zklink_sdk.cs ---"
+          tail -10 pack/linux/zklink_sdk.cs
+
       - name: Assemble package layout
         run: |
           mkdir -p nuget/runtimes/linux-x64/native
           mkdir -p nuget/runtimes/win-x64/native
           cp pack/linux/libuniffi.so nuget/runtimes/linux-x64/native/libuniffi.so
           cp pack/windows/uniffi.dll nuget/runtimes/win-x64/native/uniffi.dll
-          cp pack/linux/*.cs nuget/zklink_sdk.cs
+          cp pack/linux/zklink_sdk.cs nuget/zklink_sdk.cs
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@v4
