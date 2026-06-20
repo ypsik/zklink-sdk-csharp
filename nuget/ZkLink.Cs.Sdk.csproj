@@ -11,16 +11,15 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IncludeBuildOutput>true</IncludeBuildOutput>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Generated C# bindings, copied in by the workflow before packing -->
     <Compile Include="zklink_sdk.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Native libraries, placed under runtimes/ so .NET picks the right one automatically -->
     <None Include="runtimes/linux-x64/native/libuniffi.so">
       <Pack>true</Pack>
       <PackagePath>runtimes/linux-x64/native/libuniffi.so</PackagePath>
